@@ -8,8 +8,6 @@ def sentences_to_parts_three(sentences):
     templates_list = []
     for sentence in sentences:
         templates = dict()
-        # if filter_three_plus(sentence):  # 过滤有‘由于，缘由，理由，自由等的句子’
-        #     break
         line = sentence.strip().replace('<p>', '').replace('\u3000', '')
         if line:
             first_item = item_title_filter(line)  # 过滤第.*条
@@ -19,7 +17,7 @@ def sentences_to_parts_three(sentences):
             if not first_segs:
                 return templates
             seg = ltp_result_dict['seg']
-            behavior = first_segs[2]
+            behavior = remove_last_de(remove_special_character(first_segs[2]))
             key = first_segs[1]
             key_id = 0
             if seg:
@@ -39,12 +37,12 @@ def sentences_to_parts_three(sentences):
                         else:
                             sub = ''.join([n['word'] for n in seg[beg:end + 1]])
                         be = behavior.replace(sub, '')
-                        condition = remove_dun(remove_special_character(first_segs[0].replace(sub, '')))
+                        condition = remove_last_de(remove_dun(remove_special_character(first_segs[0].replace(sub, ''))))
                         templates['condition'], templates['subject'], templates['key'], templates['behavior'] = \
                             condition, sub, key, be
                         break
                     else:
-                        condition = remove_dun(remove_special_character(first_segs[0]))
+                        condition = remove_last_de(remove_dun(remove_special_character(first_segs[0])))
                         templates['condition'], templates['subject'], templates['key'], templates['behavior'] = \
                             condition, '', key, behavior
 
@@ -77,6 +75,6 @@ if __name__ == '__main__':
     #     for i, r in enumerate(do()):
     #         print(i, r)
     #         # out.write(r + '\n')
-    str_tnp = '第四十条使用全民所有的水域、滩涂从事养殖生产，无正当理由使水域、滩涂荒芜满一年的，由发放养殖证的机关责令限期开发利用'
+    str_tnp = '<p>肇事车辆参加机动车第三者责任强制保险的，由保险公司在责任限额范围内支付抢救费用；抢救费用超过责任限额的，未参加机动车第三者责任强制保险或者肇事后逃逸的，由道路交通事故社会救助基金先行垫付部分或者全部抢救费用，道路交通事故社会救助基金管理机构有权向交通事故责任人追偿。</p>'
     templte = sentences_to_parts_three([str_tnp])
     print(templte)

@@ -145,6 +145,7 @@ def full_result_2(data):
             subject = full_result_dict['subject']
             behavior = full_result_dict['behavior']
             key = full_result_dict['key']
+            result = full_result_dict['result']
 
             condition_id = None
             if condition:
@@ -157,6 +158,9 @@ def full_result_2(data):
                 build_subject(subject_id, sentence_id, subject)
 
             result_id = None
+            if result:
+                result_id = str(uuid.uuid1())
+                build_result(result_id, sentence_id, result)
             key_id = None
             if key:
                 key_id = str(uuid.uuid1())
@@ -202,7 +206,6 @@ def full_result_3(data):
                 build_key(key_id, sentence_id, key)
             # print('key', key_id, sentence_id, key)
 
-            behavior_id = None
             if behavior:
                 behavior_id = str(uuid.uuid1())
                 build_behavior(behavior_id, sentence_id, behavior, condition_id, subject_id, result_id, key_id)
@@ -219,36 +222,43 @@ def full_result_4(data):
             full_result_dict = res
             if not full_result_dict:
                 continue
-            # condition = full_result_dict['condition']
-            # subject = full_result_dict['subject']
+            condition = full_result_dict['condition']
+            subject = full_result_dict['subject']
             result = full_result_dict['result']
-            # key = full_result_dict['key']
+            key = full_result_dict['key']
             behavior = full_result_dict['behavior']
 
             condition_id = None
-            # build_condition(condition_id, sentence_id, condition)
+            if condition:
+                condition_id  = str(uuid.uuid1())
+                build_condition(condition_id, sentence_id, condition)
             # print('condition:', condition_id, sentence_id, condition)
             #
             subject_id = None
-            # build_subject(subject_id, sentence_id, subject)
+            if subject:
+                subject_id = str(uuid.uuid1())
+                build_subject(subject_id, sentence_id, subject)
             # print('subject:', subject_id, sentence_id, subject)
 
             key_id = None
-            # build_key(key_id, sentence_id, key)
+            if key:
+                key_id = str(uuid.uuid1())
+                build_key(key_id, sentence_id, key)
             # print('key', key_id, sentence_id, key)
-
-            result_id = str(uuid.uuid1())
-            build_result(result_id, sentence_id, result)
-
-            behavior_id = str(uuid.uuid1())
-            build_behavior(behavior_id, sentence_id, behavior, condition_id,subject_id, result_id, key_id)
+            result_id = None
+            if result:
+                result_id = str(uuid.uuid1())
+                build_result(result_id, sentence_id, result)
+            if behavior:
+                behavior_id = str(uuid.uuid1())
+                build_behavior(behavior_id, sentence_id, behavior, condition_id,subject_id, result_id, key_id)
 
 
 # 所有法条，按照三种句模，执行成分标注
 def all_law_parse(sql):
     # sql = 'select id, law_id, item_id, sentence from law_item_split'
     all_law_data = get_data_from_mysql(sql)
-    # write_to_file_append(all_law_data, 'all_law_data.out')
+    write_to_file_append(all_law_data, 'all_law_data.out')
     data_1 = []
     data_2 = []
     data_3 = []
@@ -272,11 +282,10 @@ def all_law_parse(sql):
     for item in data_2[:]:
         print(item)
 
-
-    # full_result_1(data_1)
-    # full_result_2(data_2)
-    # full_result_3(data_3)
-    # full_result_4(data_4)
+    full_result_1(data_1)
+    full_result_2(data_2)
+    full_result_3(data_3)
+    full_result_4(data_4)
 
 
 def take_out_colon(num, item):

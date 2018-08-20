@@ -1,7 +1,7 @@
 from function_lib.functions import *
 from function_lib.rule_table import item_title_filter, remove_special_character, remove_useless_desc
 import re
-from function_lib.rule_table import remove_last_de, check_sub
+from function_lib.rule_table import remove_last_de, check_sub, filter_key_two_behv, check_end
 keys = ['当', '应当', '方可', '不得', '禁止', '严禁', '可以']
 
 
@@ -14,11 +14,11 @@ def info_extract(sentences):
                 before_key = ''.join(sen[:i])
                 tem_dict['condition'], tem_dict['subject'] = subject_condition_filter(before_key)
                 tem_dict['key'] = word
-                tem_dict['behavior'] = ''.join(sen[i+1:]).replace('<s>','').replace('</s>','')
+                tem_dict['behavior'] = ''.join(sen[i+1:]).replace('<s>', '').replace('</s>', '')
                 break
         else:
             if templates:
-                templates[-1]['behavior'] += ''.join(sen).replace('<s>','').replace('</s>','')
+                templates[-1]['behavior'] += ''.join(sen).replace('<s>', '').replace('</s>', '')
 
         if tem_dict:
             templates.append(tem_dict)
@@ -141,6 +141,7 @@ def sentence_split_j(item):
     seg = ltp_srl['seg']
     role = ltp_srl['role']
     sen = []
+    special = ['其他车辆']
 
     if role:
         sub_beg_id = -1  # 记录主体单词开始位置的临时变量
@@ -154,7 +155,13 @@ def sentence_split_j(item):
                 st = ''
                 for item in seg[beg:end+1]:
                     st = st+item['word']
-                if sub_beg_id == -1 and sub_end_id == -1 and check_sub(st): #  or (sub_end_id-sub_beg_id) <= (end-beg) and (end-beg) > 0优先使用句子中靠后的A0和更长的A0作为主体
+                if sub_beg_id == -1 and sub_end_id == -1 and check_sub(st) and check_end(seg[end+1]['word']): #  or (sub_end_id-sub_beg_id) <= (end-beg) and (end-beg) > 0优先使用句子中靠后的A0和更长的A0作为主体
+                    sub_beg_id = beg
+                    sub_end_id = end+1  # 因A0变动的特例，创造出的规则
+                    break
+                elif st in special:
+                    break
+                else:
                     sub_beg_id = beg
                     sub_end_id = end
 
@@ -178,10 +185,12 @@ def info_extract_j(sen):
     iskey = check_key(sen)
     tem_list = []
     # 此类分句情况下实际上sen里只有一个list
-    tem_dict = dict()
+
     if iskey:
         last_key = ''
+        last_sub = ''
         for j in range(0, len(iskey)):
+            tem_dict = dict()
             i = iskey[j]  # 关键词的索引
             # 把key词前面的字符串提取出来
             before_key = ''.join(sen[:i])
@@ -189,6 +198,9 @@ def info_extract_j(sen):
                 break
             last_key = sen[i]
             tem_dict['condition'], tem_dict['subject'] = subject_condition_filter(before_key)
+            if tem_dict['subject'] and last_sub == tem_dict['subject']:  # 一句话中有两个以上关键词，且主语相同
+                tem_dict['condition'] = ''
+                break
             tem_dict['condition'] = remove_last_de(tem_dict['condition'])
             # 如果subject未能提取出来，并且还没到最后一个key词，则继续 ,cll:有两个关键字且主语为空的，说的是一件事
             if (tem_dict['subject'] == '') and (j < len(iskey) - 1):
@@ -196,14 +208,24 @@ def info_extract_j(sen):
                 tem_dict['subject'] = '' if len(tem_dict['subject']) <= 1 else tem_dict['subject']
                 tem_dict['key'] = sen[i]
                 tem_dict['behavior'] = ''.join(sen[i + 1:]).replace('<s>', '').replace('</s>', '')
+                tem_dict['result'] = ''
+                if filter_key_two_behv(tem_dict['behavior']):
+                    tem_dict['result'] = tem_dict['behavior']
+                    tem_dict['behavior'] = tem_dict['condition']
+                    tem_dict['condition'] = ''
                 tem_list.append(tem_dict)
                 return tem_list
-            # templates[-1]['behavior'] += ''.join(sentences).replace('<s>', '').replace('</s>', '')
             else:
                 tem_dict['condition'] = '' if len(tem_dict['condition']) <= 1 else tem_dict['condition']
                 tem_dict['subject'] = '' if len(tem_dict['subject']) <= 1 else tem_dict['subject']
                 tem_dict['key'] = sen[i]
                 tem_dict['behavior'] = ''.join(sen[i + 1:]).replace('<s>', '').replace('</s>', '')
+                tem_dict['result'] = ''
+                if filter_key_two_behv(tem_dict['behavior']):
+                    tem_dict['result'] = tem_dict['behavior']
+                    tem_dict['behavior'] = tem_dict['condition']
+                    tem_dict['condition'] = ''
+                last_sub = tem_dict['subject']
                 tem_list.append(tem_dict)
                 continue
     return tem_list
@@ -227,7 +249,10 @@ if __name__ == '__main__':
     #         print(i, end='\n')
     #         out.write(r + '\n')
     # 在通航河流上建设永久性拦河闸坝，建设单位应当按照航道发展规划技术等级建设通航建筑物
-    #交通警察受到开除处分或者被辞退的，应当取消警衔
+    #公安机关交通管理部门拖车不得向当事人收取费用，并应当及时告知当事人停放地点
     #因自然灾害、事故灾难等突发事件造成航道损坏、阻塞的，负责航道管理的部门应当按照突发事件应急预案尽快修复抢通
-    st = '公安机关交通管理部门应当自受理申请之日起五个工作日内完成机动车登记审查工作，对符合前款规定条件的，应当发放机动车登记证书、号牌和行驶证'
+    #机动车行驶时，驾驶人、乘坐人员应当按规定使用安全带，摩托车驾驶人及乘坐人员应当按规定戴安全头盔。
+    #<p>警车、消防车、救护车、工程救险车应当按照规定喷涂标志图案，安装警报器、标志灯具。</p>
+    st = '在不影响其他车辆通行的情况下，可以不受车辆分道行驶的限制，但是不得逆向行驶。'
+
     print(item_info_parse_j(st))

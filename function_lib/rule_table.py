@@ -56,7 +56,7 @@ def has_key_one_plus(s):
 
 
 def has_key_two(s):
-    keys = ['当', '应当', '方可', '不得', '禁止', '严禁']
+    keys = ['当', '应当', '方可', '不得', '禁止', '严禁', '可以']
     has_key_flag = False
     for k in keys:
         if k in s:
@@ -64,15 +64,35 @@ def has_key_two(s):
             break
     return has_key_flag
 
+
+def filter_key_two_behv(s):  # 判断behavior中是否有表示后果的关键词
+    keys = ['吊销', '拘留', '没收', '罚款']
+    has_key_flag = False
+    for k in keys:
+        if k in s:
+            has_key_flag = True
+            break
+    return has_key_flag
+
+
+def check_end(s):
+    keys = ['救险车']
+    has_key_flag = False
+    for k in keys:
+        if k in s:
+            has_key_flag = True
+            break
+    return has_key_flag
 
 def has_key_two_plus(s):
-    keys = ['维护尺度']  #航道维护尺度是指航道在不同水位期应当保持的水深、宽度、弯曲半径等技术要求。</p> 说明性的法律过滤掉
+    keys = ['维护尺度', '可以并', '由']  # 航道维护尺度是指航道在不同水位期应当保持的水深、宽度、弯曲半径等技术要求。</p> 说明性的法律过滤掉
     has_key_flag = False
     for k in keys:
         if k in s:
             has_key_flag = True
             break
     return has_key_flag
+
 
 def has_key_three(s):
     reg = '(.*?)(由|按照)(.*)'
@@ -113,7 +133,7 @@ def filter_three_plus(sentence):
     :return:
     """
     data = []
-    reg = '(.*?)(由于|理由|缘由|自由|是由)(.*)'
+    reg = '(.*?)(由于|理由|缘由|自由|是由|未按照)(.*)'
     matcher = re.match(reg, sentence)
     if matcher:
         data.append(matcher.group(1))
