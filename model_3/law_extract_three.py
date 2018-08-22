@@ -8,7 +8,7 @@ def sentences_to_parts_three(sentences):
     templates_list = []
     for sentence in sentences:
         templates = dict()
-        line = sentence.strip().replace('<p>', '').replace('\u3000', '')
+        line = sentence.strip().replace('<p>', '').replace('\u3000', '').replace('"', "“")
         if line:
             first_item = item_title_filter(line)  # 过滤第.*条
 
@@ -38,13 +38,29 @@ def sentences_to_parts_three(sentences):
                             sub = ''.join([n['word'] for n in seg[beg:end + 1]])
                         be = behavior.replace(sub, '')
                         condition = remove_last_de(remove_dun(remove_special_character(first_segs[0].replace(sub, ''))))
-                        templates['condition'], templates['subject'], templates['key'], templates['behavior'] = \
-                            condition, sub, key, be
+                        if len(sub) <= 1:
+                            sub = ''
+                        if filter_key_two_behv(be):
+                            templates['result'] = be
+                            templates['subject'] = sub
+                            templates['behavior'] = condition
+                            templates['key'] = key
+                            templates['condition'] = ''
+                        else:
+                            templates['condition'], templates['subject'], templates['key'], templates['behavior'], templates['result'] = \
+                                condition, sub, key, be, ''
                         break
                     else:
                         condition = remove_last_de(remove_dun(remove_special_character(first_segs[0])))
-                        templates['condition'], templates['subject'], templates['key'], templates['behavior'] = \
-                            condition, '', key, behavior
+                        if filter_key_two_behv(behavior):
+                            templates['result'] = behavior
+                            templates['subject'] = ''
+                            templates['behavior'] = condition
+                            templates['key'] = key
+                            templates['condition'] = ''
+                        else:
+                            templates['condition'], templates['subject'], templates['key'], templates['behavior'], templates['result'] = \
+                                condition, '', key, behavior, ''
 
             templates_list.append(templates)
 
@@ -75,6 +91,6 @@ if __name__ == '__main__':
     #     for i, r in enumerate(do()):
     #         print(i, r)
     #         # out.write(r + '\n')
-    str_tnp = '<p>肇事车辆参加机动车第三者责任强制保险的，由保险公司在责任限额范围内支付抢救费用；抢救费用超过责任限额的，未参加机动车第三者责任强制保险或者肇事后逃逸的，由道路交通事故社会救助基金先行垫付部分或者全部抢救费用，道路交通事故社会救助基金管理机构有权向交通事故责任人追偿。</p>'
+    str_tnp = '两个收费站之间的距离，不得小于国务院交通主管部门规定的标准。</p>'
     templte = sentences_to_parts_three([str_tnp])
     print(templte)
