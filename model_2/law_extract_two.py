@@ -132,6 +132,7 @@ def item_info_parse_j(text):
 def sentence_split_j(item):
     item = item_title_filter(item)
     sents = []
+
     ltp_srl = ltp_tool(item, 'srl')
 
     if not ltp_srl:
@@ -139,6 +140,11 @@ def sentence_split_j(item):
 
     # 按照srl方法拆分
     seg = ltp_srl['seg']
+    key_id = None
+    for seg_item in seg:
+        if seg_item['word'] in keys:
+            key_id = seg_item['id']
+            break
     role = ltp_srl['role']
     sen = []
     special = ['其他车辆']
@@ -151,17 +157,18 @@ def sentence_split_j(item):
             end = r['end']
             role_type = r['type']
             # relate = ltp_par[end]['relate']
-            if role_type == 'A0':
+            if role_type == 'A0' or role_type == 'A2':
                 st = ''
                 for item in seg[beg:end+1]:
                     st = st+item['word']
-                if sub_beg_id == -1 and sub_end_id == -1 and check_sub(st) and check_end(seg[end+1]['word']): #  or (sub_end_id-sub_beg_id) <= (end-beg) and (end-beg) > 0优先使用句子中靠后的A0和更长的A0作为主体
+                temp = seg[end+1]['word'] if seg[end+1]['word'] else ''  # 第十五条警车、消防车、救护车、工程救险车应当按照规定喷涂标志图案，安装警报器、标志灯具
+                if sub_beg_id == -1 and sub_end_id == -1 and check_sub(st) and check_end(temp): #  or (sub_end_id-sub_beg_id) <= (end-beg) and (end-beg) > 0优先使用句子中靠后的A0和更长的A0作为主体
                     sub_beg_id = beg
                     sub_end_id = end+1  # 因A0变动的特例，创造出的规则
                     break
                 elif st in special:
                     break
-                else:
+                elif end < key_id and check_sub(st):
                     sub_beg_id = beg
                     sub_end_id = end
 
@@ -248,11 +255,7 @@ if __name__ == '__main__':
     #     for i, r in enumerate(do()):
     #         print(i, end='\n')
     #         out.write(r + '\n')
-    # 在通航河流上建设永久性拦河闸坝，建设单位应当按照航道发展规划技术等级建设通航建筑物
-    #公安机关交通管理部门拖车不得向当事人收取费用，并应当及时告知当事人停放地点
-    #因自然灾害、事故灾难等突发事件造成航道损坏、阻塞的，负责航道管理的部门应当按照突发事件应急预案尽快修复抢通
-    #机动车行驶时，驾驶人、乘坐人员应当按规定使用安全带，摩托车驾驶人及乘坐人员应当按规定戴安全头盔。
-    #<p>警车、消防车、救护车、工程救险车应当按照规定喷涂标志图案，安装警报器、标志灯具。</p>
-    st = '在不影响其他车辆通行的情况下，可以不受车辆分道行驶的限制，但是不得逆向行驶。'
+
+    st = '<p>执行职务的交通警察认为应当对道路交通违法行为人给予暂扣或者吊销机动车驾驶证处罚的，可以先予扣留机动车驾驶证，并在二十四小时内将案件移交公安机关交通管理部门处理。</p>'
 
     print(item_info_parse_j(st))
