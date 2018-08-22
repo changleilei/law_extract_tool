@@ -72,17 +72,6 @@ def first_item_filter(sentence):
     return data
 
 
-def do():
-    lines = read_from_file('../data_process/four_law.txt')
-    for line in lines[:]:
-        contents = line.split('\t')
-        law_id, item_id, title, content = contents[0], contents[1], contents[2], contents[3]
-
-        generated_template = law_item_parse(content)
-        print(item_id, title, content, generated_template)
-        yield line + '\n' + str(generated_template)
-
-
 def do_regex_one(item):
     generated_template = law_item_parse(item)
     print('generated_template_regex_1', generated_template)
@@ -125,44 +114,45 @@ def law_item_parse_j(lines):
 
         if not first_segs:
             return templates
-        seg = ltp_result_dict['seg']
-        key_id = 0
-        if seg:
-            for n in seg:
-                if n['word'] in key1:
-                    key_id = n['id']
-                    break
-        roles = ltp_result_dict['role']
-        # key_id之前的部分是subject，之后的都是result
-        if roles:
-            # 逆序roles
-            for role in roles[::-1]:
-                role_type = role['type']
-                beg = role['beg']
-                end = role['end']
-                result = remove_special_character(first_segs[1])
-                # 实际上是直到找到A0为止，否则会一直循环下去
-                if role_type == 'A0' and end < key_id:
-                    sub = ''.join([n['word'] for n in seg[beg:end+1]])
-                    condition = remove_special_character(first_segs[0].replace(sub, ''))
-                    template = st.SentenceTemplate(subject=sub, condition=condition, result=result, flag=0)
-                    break
-                elif role_type == 'A1' and end < key_id:
-                    segs_ = remove_special_character(first_segs[0])
-                    template = st.SentenceTemplate(subject='', condition=segs_, result=result, flag=1)
-                    continue
+        if ltp_result_dict:
+            seg = ltp_result_dict['seg']
+            key_id = 0
+            if seg:
+                for n in seg:
+                    if n['word'] in key1:
+                        key_id = n['id']
+                        break
+            roles = ltp_result_dict['role']
+            # key_id之前的部分是subject，之后的都是result
+            if roles:
+                # 逆序roles
+                for role in roles[::-1]:
+                    role_type = role['type']
+                    beg = role['beg']
+                    end = role['end']
+                    result = remove_special_character(first_segs[1])
+                    # 实际上是直到找到A0为止，否则会一直循环下去
+                    if role_type == 'A0' and end < key_id:
+                        sub = ''.join([n['word'] for n in seg[beg:end+1]])
+                        condition = remove_special_character(first_segs[0].replace(sub, ''))
+                        template = st.SentenceTemplate(subject=sub, condition=condition, result=result, flag=0)
+                        break
+                    elif role_type == 'A1' and end < key_id:
+                        segs_ = remove_special_character(first_segs[0])
+                        template = st.SentenceTemplate(subject='', condition=segs_, result=result, flag=1)
+                        continue
 
-                else:
-                    template = st.SentenceTemplate(subject='', condition='', result=result, flag=1)
-            if template:
-                # condition, subject, behavior, result = template.parse_items(items)
-                beh = []
-                for tiao in items:
-                    beh.append(tiao)
-                if len(template.condition)<=1:
-                    template.condition = ''
-                templates['condition'], templates['subject'], templates['behavior'], templates['result'] = \
-                    template.condition, template.subject, beh, template.result
+                    else:
+                        template = st.SentenceTemplate(subject='', condition='', result=result, flag=1)
+                if template:
+                    # condition, subject, behavior, result = template.parse_items(items)
+                    beh = []
+                    for tiao in items:
+                        beh.append(tiao)
+                    if len(template.condition) <= 1:
+                        template.condition = ''
+                    templates['condition'], templates['subject'], templates['behavior'], templates['result'] = \
+                        template.condition, template.subject, beh, template.result
     return templates
 
 
@@ -171,7 +161,6 @@ def law_item_parse_j(lines):
 if __name__ == '__main__':
     # print()
     # with open('result.out2', 'w', encoding='UTF-8') as out:
-        for i, r in enumerate(do()):
-            print(i, end='\n')
-            # out.write(r + '\n')
+    law_item_parse_j()
+
 
