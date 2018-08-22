@@ -42,7 +42,7 @@ def sentences_to_parts_four(sentences):
                             sub = ''
                         else:
                             behavior = remove_last_de(remove_dun(remove_special_character(first_segs[0].replace(sub, ''))))
-                        if sub == '的':
+                        if len(sub) <= 1:
                             sub = ''
                         templates['condition'], templates['subject'], templates['key'], templates['behavior'], templates['result'] = \
                             '', sub, '', behavior, key+res
