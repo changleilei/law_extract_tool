@@ -25,8 +25,12 @@ def ltp_tool(text, target):
         print('ltp_result_json:', ltp_result_json)
         if not ltp_result_json:
             return None
-        ltp_result_dict = json.loads(ltp_result_json, encoding='UTF-8')
-        return ltp_result_dict
+        try:
+            ltp_result_dict = json.loads(ltp_result_json, encoding='UTF-8')
+            return ltp_result_dict
+        except Exception:
+            print('error_ltp: ', ltp_result_json)
+
     else:
         return None
 
