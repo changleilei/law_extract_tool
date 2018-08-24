@@ -40,7 +40,7 @@ def sentences_to_parts_three(sentences):
                         condition = remove_last_de(remove_dun(remove_special_character(first_segs[0].replace(sub, ''))))
                         if len(sub) <= 1:
                             sub = ''
-                        if filter_key_two_behv(be):
+                        if filter_key_two_behv(be):  # 对于behavior中是result的情况进行了过滤
                             templates['result'] = be
                             templates['subject'] = sub
                             templates['behavior'] = condition
