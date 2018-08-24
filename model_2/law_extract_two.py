@@ -117,7 +117,7 @@ def subject_condition_filter(s):
 
 
 def item_info_parse_j(text):
-    text = remove_useless_desc(text)
+    text = remove_useless_desc(text)  # 过滤分号前的一切
     sentences = sentence_split_j(text)
     templates_list = info_extract_j(sentences)
     return templates_list
@@ -132,6 +132,7 @@ def item_info_parse_j(text):
 def sentence_split_j(item):
     item = item_title_filter(item)
     sents = []
+    temp = ''
 
     ltp_srl = ltp_tool(item, 'srl')
 
@@ -140,7 +141,7 @@ def sentence_split_j(item):
 
     # 按照srl方法拆分
     seg = ltp_srl['seg']
-    key_id = None
+    key_id = 0
     for seg_item in seg:
         if seg_item['word'] in keys:
             key_id = seg_item['id']
@@ -161,7 +162,10 @@ def sentence_split_j(item):
                 st = ''
                 for item in seg[beg:end+1]:
                     st = st+item['word']
-                temp = seg[end+1]['word'] if seg[end+1]['word'] else ''  # 第十五条警车、消防车、救护车、工程救险车应当按照规定喷涂标志图案，安装警报器、标志灯具
+                try:
+                    temp = seg[end+1]['word'] if seg[end+1]['word'] else ''  # 第十五条警车、消防车、救护车、工程救险车应当按照规定喷涂标志图案，安装警报器、标志灯具
+                except Exception:
+                    print(item)
                 if sub_beg_id == -1 and sub_end_id == -1 and check_sub(st) and check_end(temp): #  or (sub_end_id-sub_beg_id) <= (end-beg) and (end-beg) > 0优先使用句子中靠后的A0和更长的A0作为主体
                     sub_beg_id = beg
                     sub_end_id = end+1  # 因A0变动的特例，创造出的规则
@@ -256,6 +260,6 @@ if __name__ == '__main__':
     #         print(i, end='\n')
     #         out.write(r + '\n')
 
-    st = '<p>执行职务的交通警察认为应当对道路交通违法行为人给予暂扣或者吊销机动车驾驶证处罚的，可以先予扣留机动车驾驶证，并在二十四小时内将案件移交公安机关交通管理部门处理。</p>'
+    st = '船舶应当按国家规定，向主管机关缴纳船舶港务费'
 
     print(item_info_parse_j(st))
