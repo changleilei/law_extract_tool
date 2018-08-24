@@ -3,10 +3,12 @@ from function_lib.functions import *
 
 
 class SentenceTemplate:
-    def __init__(self, subject=[], condition='', result='', flag=0):
+    def __init__(self, subject=[], condition='', result='', behavior1 = '', flag=0):
         self.subject = subject
         self.condition = condition
         self.result = result
+        self.key = []
+        self.behavior1 = behavior1
         self.behavior = []
         self.flag = flag
 
