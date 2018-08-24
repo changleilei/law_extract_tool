@@ -96,35 +96,69 @@ def full_result_1(data):
             subject = full_result_dict['subject']
             behavior = full_result_dict['behavior']
             result = full_result_dict['result']
-            # key = full_result_dict['key']
+            key = full_result_dict['key']
 
             condition_id = None
             if len(condition) > 1:
                 condition_id = str(uuid.uuid1())
                 build_condition(condition_id, sentence_id, condition)
-
+            key_id = None
             result_id = None
-            if len(result) > 1:
-                result_id = str(uuid.uuid1())
-                build_result(result_id, sentence_id, result)
+
 
             subject_id = None
             if isinstance(subject, str):
                 if len(subject) > 1:
                     subject_id = str(uuid.uuid1())
                     build_subject(subject_id, sentence_id, subject)
-                if behavior:
-                    for be in behavior:
-                        behavior_id = str(uuid.uuid1())
-                        build_behavior(behavior_id, sentence_id, be, condition_id, subject_id, result_id,  None)
+                if isinstance(result, str):
+                    if len(result) > 1:
+                        result_id = str(uuid.uuid1())
+                        build_result(result_id, sentence_id, result)
+                    if behavior:
+                        for i, be in enumerate(behavior):
+                            key_id = str(uuid.uuid1())
+                            build_key(key_id, sentence_id, key[i])
+                            behavior_id = str(uuid.uuid1())
+                            build_behavior(behavior_id, sentence_id, be, condition_id, subject_id, result_id, key_id)
+                elif isinstance(result, list):
+                    if behavior:
+                        for i, be in enumerate(behavior):
+                            key_id = str(uuid.uuid1())
+                            build_key(key_id, sentence_id, key[i])
+                            try:
+                                if len(result[i]) > 1:
+                                    result_id = str(uuid.uuid1())
+                                    build_result(result_id, sentence_id, result[i])
+                            except Exception:
+                                write_to_file_append([[sentence_id]], 'id.txt')
+                            behavior_id = str(uuid.uuid1())
+                            build_behavior(behavior_id, sentence_id, be, condition_id, subject_id, result_id, key_id)
             elif isinstance(subject, list):
                 for i, su in enumerate(subject):
                     if su != '':
                         subject_id = str(uuid.uuid1())
                         build_subject(subject_id, sentence_id, su)
-                    if behavior:
-                        behavior_id = str(uuid.uuid1())
-                        build_behavior(behavior_id, sentence_id, behavior[i], condition_id, subject_id, result_id, None)
+                    if isinstance(result, str):
+                        if len(result) > 1:
+                            result_id = str(uuid.uuid1())
+                            build_result(result_id, sentence_id, result)
+                        if behavior:
+                            key_id = str(uuid.uuid1())
+                            build_key(key_id, sentence_id, key[i])
+                            behavior_id = str(uuid.uuid1())
+                            build_behavior(behavior_id, sentence_id, behavior[i], condition_id, subject_id, result_id,
+                                           key_id)
+                    elif isinstance(result, list):
+                        if behavior:
+                            key_id = str(uuid.uuid1())
+                            build_key(key_id, sentence_id, key[i])
+                            if len(result[i]) > 1:
+                                result_id = str(uuid.uuid1())
+                                build_result(result_id, sentence_id, result[i])
+                            behavior_id = str(uuid.uuid1())
+                            build_behavior(behavior_id, sentence_id, behavior[i], condition_id, subject_id, result_id,
+                                           key_id)
 
 
 def full_result_2(data):
@@ -168,6 +202,7 @@ def full_result_2(data):
 
             if behavior:
                 behavior_id = str(uuid.uuid1())
+                behavior = number_zh_filter(behavior)
                 build_behavior(behavior_id, sentence_id, behavior, condition_id, subject_id, result_id, key_id)
 
 
@@ -185,6 +220,7 @@ def full_result_3(data):
             subject = full_result_dict['subject']
             behavior = full_result_dict['behavior']
             key = full_result_dict['key']
+            result = full_result_dict['result']
 
             condition_id = None
             if condition:
@@ -199,6 +235,9 @@ def full_result_3(data):
             # print('subject:', subject_id, sentence_id, subject)
 
             result_id = None
+            if result:
+                result_id = str(uuid.uuid1())
+                build_result(result_id, sentence_id, result)
 
             key_id = None
             if key:
@@ -258,7 +297,7 @@ def full_result_4(data):
 def all_law_parse(sql):
     # sql = 'select id, law_id, item_id, sentence from law_item_split'
     all_law_data = get_data_from_mysql(sql)
-    write_to_file_append(all_law_data, 'all_law_data.out')
+    # test_data = [('a','a','a','两个收费站之间的距离，不得小于国务院交通主管部门规定的标准。')]
     data_1 = []
     data_2 = []
     data_3 = []
@@ -266,6 +305,8 @@ def all_law_parse(sql):
 
     for line in all_law_data[:]:
         s_id, law_id, item_id, sentence = line[0], line[1], line[2], line[3]
+        if check_sentence(sentence):
+            continue
         result, num = sentences_to_parts(sentence)
         if not result:
             continue
@@ -277,10 +318,6 @@ def all_law_parse(sql):
             data_3.append([s_id, result])
         elif num == 4:
             data_4.append([s_id, result])
-
-    write_to_file_append(data_2, 'result2.txt')
-    for item in data_2[:]:
-        print(item)
 
     full_result_1(data_1)
     full_result_2(data_2)
@@ -384,7 +421,7 @@ if __name__ == '__main__':
     log_path = os.path.dirname(os.getcwd()) + '/Logs/'
     log_name = log_path + rq + '.log'
     logfile = log_name
-    fh = logging.FileHandler(logfile, mode='a')
+    fh = logging.FileHandler(logfile, mode='a', encoding='utf-8')
     fh.setLevel(logging.ERROR)
 
     # 定义handler的输出格式
@@ -392,10 +429,12 @@ if __name__ == '__main__':
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     try:
-        size = 10
-        step = 100
+        size = 180
+        step = 1000
         for i in range(size):
-            sql = 'select lit.id, law_id, item_id, sentence from law_item_split lit LEFT JOIN zllaw ON lit.law_id = zllaw.ID  WHERE zllaw.TYPENAME like '+r"'%交通%'"+' limit '+str(i*step)+", "+str(step)
+            # st = r"'5df14b20-9bc4-11e8-9c3b-0050562810b7'"
+            # test_sql = 'select id, law_id, item_id, sentence from traffic_law_item_split where id = '+st
+            sql = 'select id, law_id, item_id, sentence from traffic_law_item_split lit WHERE  `index`>=(select `index` from traffic_law_item_split limit '+ str(i*step) +',1) limit '+ str(step)
             all_law_parse(sql)
     except (SystemExit, KeyboardInterrupt):
         raise
