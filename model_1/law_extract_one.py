@@ -3,8 +3,9 @@ from function_lib.rule_table import *
 from function_lib.functions import *
 
 key = ['下列', '以下', '如下']
-key2 = ['应当', '不得', '禁止']
+key2 = ['应当', '不得', '禁止', '可以']
 condition_list = ['发生']
+sub_list = ['交通警察', '主管机关', '港务监督']
 
 
 def first_item_filter(sentence):
@@ -26,7 +27,7 @@ def first_item_filter(sentence):
 
 def second_item_filter(sentence):
     data = []
-    reg = '(.*?)(不得|应当)(.*)'
+    reg = '(.*?)(不得|应当|可以)(.*)'
     matcher = re.match(reg, sentence)
     if matcher:
         data.append(matcher.group(1))
@@ -148,7 +149,7 @@ def law_item_parse_j(lines):
                             get_result = get_sentence_key(tiao)
                             key_list.append(''.join(s for s in get_result[0]))
                             behavior = last_beh + remove_last_de(tiao.replace(key_list[i], ''))
-                            if filter_key_two_behv(behavior):  # 对于behavior中是result的情况进行了过滤
+                            if filter_key_one_behv(behavior)  and template.subject not in sub_list:  # 对于behavior中是result的情况进行了过滤
                                 filter_result = get_result_from_beh(behavior)
                                 beh.append(remove_last_de(remove_special_character(filter_result[0])))
                                 result_list.append(filter_result[1]+filter_result[2])
@@ -157,7 +158,7 @@ def law_item_parse_j(lines):
                         else:
                             key_list.append(key_item)
                             behavior = last_beh + remove_last_de(tiao)
-                            if filter_key_two_behv(behavior):  # 对于behavior中是result的情况进行了过滤
+                            if filter_key_one_behv(behavior) and filter_key_one_behv_plus(behavior) and template.subject not in sub_list:  # 对于behavior中是result的情况进行了过滤
                                 filter_result = get_result_from_beh(behavior)
                                 beh.append(remove_last_de(remove_special_character(filter_result[0])))
                                 result_list.append(filter_result[1]+filter_result[2])
