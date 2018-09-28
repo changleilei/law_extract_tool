@@ -13,6 +13,10 @@ regex2 = '.*(应当|不得|禁止|严禁|可以|方可).*'
 
 regex3 = '(.*?)(由|按照)(.*)'
 
+regex4 = '(.*?)(责令|没收)(.*)'
+item_list = ['逾期不改正的，撤销港口岸线使用批准文件', '情节严重的，吊销港口经营许可证','有违法所得的，没收违法所得','逾期不改正的，可以处五千元以上二万元以下的罚款',
+             '经限期整改仍未达到法定许可条件的，依法吊销其港口经营许可证','造成严重后果，构成犯罪的，依法追究刑事责任', '逾期仍不缴纳的，依法申请人民法院强制执行。']
+
 
 def write_to_file_append(res, path, flag=1):
     with open(path, 'a+', encoding='UTF-8') as outfile:
@@ -21,7 +25,7 @@ def write_to_file_append(res, path, flag=1):
                 outfile.write('\t'.join(map(str, s)).replace(r'\u3000', ' ').replace('\n','') + '\n')
             else:
                 outfile.write(str(s).replace(r'\u3000', ' ') + '\n')
-        print('lines:', len(res))
+        # print('lines:', len(res))
 
 
 def regex_filter(sentence, reg):
@@ -35,13 +39,18 @@ def tag_by_regex(sentence):
     :return: 标注结果
     """
     if regex_filter(sentence, regex1):
-        print('Use regex-1:', regex1)
+        # print('Use regex-1:', regex1)
         return do_regex_one(sentence), 1
     elif regex_filter(sentence, regex2):
-        print('Use regex-2:', regex2)
+        # print('Use regex-2:', regex2)
         return do_regex_two(sentence), 2
+    elif regex_filter(sentence, regex3):
+        return ('Use regex-3:', regex3), 3
+    elif regex_filter(sentence, regex4):
+        return ('Use regex-4:', regex4) ,4
     else:
         return None, 0
+
 
 
 # 传入参数：需要知道对应的法条line，剩下两个不会用到
@@ -54,37 +63,21 @@ def sentences_to_parts(line):
     contents = content.split('</p>')
 
     # 判断是否有model_1和model_2的句子
-    if has_key_one(content) and has_key_one_plus(content):
-        print(content)
-        temp = [1, contents]
-        write_to_file_append(temp, 'all_law_data.out')
+    if (has_key_one(content) or has_key_one_v2(content)) and has_key_one_plus(content) :
+        write_to_file_append([content], 'model_1_sentence.out')
         generate_temp = sentences_to_parts_one(contents)
-        # if generate_temp:
-        #     print('Use regex-1:', regex1)
         return generate_temp, 1
     elif filter_four(content) and not has_key_three(content):
-        print(content)
-        temp = [4, contents]
-        write_to_file_append(temp, 'all_law_data.out')
         generate_temp = sentences_to_parts_four(contents)
         return generate_temp, 4
     elif not has_key_two_plus(content) and has_key_two(content):
-        print(content)
-        temp = [2, contents]
-        write_to_file_append(temp, 'all_law_data.out')
         generate_temp = sentences_to_parts_two(contents)
-        # if generate_temp:
-        #     print('Use regex-2:', regex2)
         return generate_temp, 2
-    elif has_key_three(content):
-        print(content)
-        temp = [3, contents]
-        write_to_file_append(temp, 'all_law_data.out')
+    elif has_key_three(content) and not filter_three_v3(content):
         generate_temp = sentences_to_parts_three(contents)
-        # if generate_temp:
-        #     print('Use regex-3:', regex3)
         return generate_temp, 3
     else:
+        write_to_file_append(contents, 'not_parse1.txt')
         return None, 0
 
 
@@ -107,17 +100,21 @@ def sentences_to_parts_one(contents):
                 continue
 
         # 如果第一次检测到（下列，以下，如下）关键词
-        elif has_key_one_plus(item) and beg_flag == 0:
+        elif has_key_one_plus(item) and has_key_one_v3(item) and beg_flag == 0:
             beg_flag = 1
             content_temp += item + '</p>'
         # 检测到（一）……（十)
-        elif has_key_one(item) and beg_flag == 1:
+        elif ((has_key_one(item) or (has_key_one_v2(item) or has_key_one_v4(item)) and has_key_one_v3(item))) and beg_flag == 1:
             content_temp += item + '</p>'
             num_flag = 1
         # 未检测到（一）……（十）前要一直用content_temp存储
         elif (has_key_one(item) is False) and beg_flag == 1 and num_flag == 0:
             content_temp += item
             content_temp = re.sub('</p>', '，', content_temp)
+            content_temp += '</p>'
+        elif(has_key_one(item) is False) and beg_flag == 1 and (item in item_list):  # 参见
+            content_temp = re.sub('(</p>)+$', '，', content_temp)
+            content_temp += item
             content_temp += '</p>'
         # 处理content_temp
         elif (has_key_one(item) is False) and beg_flag == 1 and num_flag == 1:
@@ -156,9 +153,9 @@ def law_to_sentence(sentence):
     """
     法条拆分成句子
     :param sentence: 法条句子
-    :return: 拆分后的句子列表
+    :return: 拆分后的句子列表和ID列表
     """
-    line = sentence.strip().replace('“', '').replace('”', '').replace('\u3000', '')\
+    line = sentence.strip().replace('“', '').replace('”', '').replace('\u3000', '').replace('\r', '')\
         .replace('\n', '').replace('\ufeff', '').replace('。', '。</p>|<p>').replace('。</p><p>', '。</p>|<p>')
 
     con = line.split('|')
@@ -176,25 +173,12 @@ def law_to_sentence(sentence):
     return sen_id, sen
 
 
-def law_item_split_test():
-    # 法条拆分句子测试
-    sql = 'select content from zllawcolumn limit 0, 20'
-    contents = get_data_from_mysql(sql)
-    for c in contents:
-        print(c[0])
-        ids, sens = law_to_sentence(c[0])
-        for s in sens:
-            print(s, end='\n')
-        print('\n')
-
-
 if __name__ == '__main__':
     print()
     get_sentence_sql = 'select item_id, sentence from law_item_split limit 0, 500'
     # sentences = get_data_from_mysql(get_sentence_sql)
-    sentences = [('1', '<p>车辆维修单位和个人应当遵守下列规定：</p><p>（一）不得占用公共道路和绿地维修作业；</p><p>（二）不得违反规定漏项、减项作业；</p><p>（三）不得使用假冒伪劣车辆配件；</p><p>（四）禁止承修报废车辆和拼装车辆。</p>')]
+    sentences = [('1', '<p>六、第二十二条修改为：“汽车贷款发放实施贷款最高发放比例要求制度，贷款人发放的汽车贷款金额占借款人所购汽车价格的比例，不得超过贷款最高发放比例要求；贷款最高发放比例要求由中国人民银行、中国银行业监督管理委员会根据宏观经济、行业发展等实际情况另行规定。</p>')]
 
-    # sentences = [('11','<p>九、增加一条，作为第二十五条：经营者采用网络、电视、电话、邮购等方式销售商品，消费者有权自收到商品之日起七日内退货，且无需说明理由，但下列商品除外：</p><p>（一）消费者定作的；</p><p>（二）')]
     for s in sentences:
         item_id, content = s[0], s[1]
         split_result, _ = sentences_to_parts(content)

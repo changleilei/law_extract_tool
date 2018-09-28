@@ -15,14 +15,14 @@ def ltp_tool(text, target):
     """
     url_prefix = 'http://192.168.2.32:8082/ltp'
     # url_prefix = 'http://localhost:5000/ltp'
-    # url_prefix = 'http://192.168.70.110:8082/ltp'
+    # url_prefix = 'http://192.168.70.110:8084/ltp'
 
     json_str = {'text': text}
     url = url_prefix + '/' + target
     res = requests.post(url, json=json_str)
     if res.status_code == 200:
         ltp_result_json = res.text.replace("'", '"')
-        print('ltp_result_json:', ltp_result_json)
+        # print('ltp_result_json:', ltp_result_json)
         if not ltp_result_json:
             return None
         try:

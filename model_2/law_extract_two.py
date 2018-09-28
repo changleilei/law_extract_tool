@@ -118,7 +118,7 @@ def subject_condition_filter(s):
 
 def item_info_parse_j(text):
     text = remove_useless_desc(text)  # 过滤分号前的一切
-    sentences = sentence_split_j(text)
+    sentences = sentence_split_j(text)  # 检测主语
     templates_list = info_extract_j(sentences)
     return templates_list
 
@@ -260,6 +260,6 @@ if __name__ == '__main__':
     #         print(i, end='\n')
     #         out.write(r + '\n')
 
-    st = '船舶应当按国家规定，向主管机关缴纳船舶港务费'
+    st = '市交通局应当在经营者终止营运前确定新的经营者'
 
     print(item_info_parse_j(st))

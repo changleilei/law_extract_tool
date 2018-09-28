@@ -1,6 +1,10 @@
+import sys
+sys.path.append(r'F:\law_git_cll')
+
 from flask import Flask, request
 from flask_cors import CORS
 from regex_select import sentences_to_parts, law_to_sentence
+from data_process.data_operate import full_result_1,full_result_2,full_result_3,full_result_4,build_item_spilt,write_to_file_append
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -21,7 +25,7 @@ def tagging():
         if result:
             data['data'] = result
             data['flag'] = flag
-    return str(data)
+    return str(data).replace("'", '"')
 
 
 @app.route('/splitting', methods=['GET', 'POST'])
@@ -38,8 +42,44 @@ def splitting():
         ids, sentences = law_to_sentence(item)
         data['ids'] = ids
         data['sentences'] = sentences
-    return str(data)
+    return str(data).replace("'", '"')
+
+
+@app.route('/store', methods=['GET', 'POST'])
+def store():
+    law_items = request.get_json()
+    if law_items is None or len(law_items) == 0:
+        return ''
+    try:
+        law_id = law_items['law_id']
+        item_id = law_items['item_id']
+        law_item = '<p>' + law_items['item'] + '</p>'
+        law_title = law_items['law_title']
+        chapter = law_items['chapter']
+
+        ids, sentences = law_to_sentence(law_item)
+
+        for id, sentence in zip(ids, sentences):
+            print(id, sentence)
+            # build_item_spilt(id, law_id, item_id, sentence, law_title, chapter)
+            parse_result , flag = sentences_to_parts(sentence)
+            if flag == 1:
+                print([id, parse_result])
+                # full_result_1([[id, parse_result]])
+            elif flag == 2:
+                print([id, parse_result])
+                # full_result_2([[id, parse_result]])
+            elif flag == 3:
+                print([id, parse_result])
+                # full_result_3([[id, parse_result]])
+            elif flag == 4:
+                print([id, parse_result])
+                # full_result_4([[id, parse_result]])
+        print('\n')
+    except Exception as e:
+        print("some errors was happen:", e)
+    return ''
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8484, debug=True)
+    app.run(host='0.0.0.0', port=8484)

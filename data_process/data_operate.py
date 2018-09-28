@@ -1,7 +1,7 @@
 import sys
 import uuid
 sys.path.append(r'F:\law_git_cll')
-from model_2 import law_extract_two as lof
+
 from function_lib.functions import *
 from regex_select import sentences_to_parts
 import logging
@@ -76,6 +76,11 @@ def build_key(key_id, sentence_id, key):
     key_sql = 'insert into lawcrf_key values (%s,%s,%s)'
     key_args = [key_id, str(sentence_id), key]
     write_data_to_mysql(key_sql, [key_args])
+
+def build_item_spilt(id, law_id, item_id, sentence, law_title, chapter):
+    sql = "INSERT INTO law_item_split VALUES (%s,%s,%s,%s,%s,%s,%s)"
+    sql_args = [id, law_id, item_id, sentence, law_title, chapter, 0]
+    write_data_to_mysql(sql, [sql_args])
 
 
 def full_result_1(data):
@@ -303,26 +308,62 @@ def all_law_parse(sql):
     data_3 = []
     data_4 = []
 
+    count_model1 = 0
+    count_model2 = 0
+    count_model3 = 0
+    count_model4 = 0
+    count_model_other = 0
+    total_sentences = 0
+
     for line in all_law_data[:]:
         s_id, law_id, item_id, sentence = line[0], line[1], line[2], line[3]
+        total_sentences += 1
         if check_sentence(sentence):
             continue
         result, num = sentences_to_parts(sentence)
         if not result:
+            count_model_other += 1
             continue
         if num == 1:
             data_1.append([s_id, result])
+            count_model1 += 1
+            print(result)
         elif num == 2:
             data_2.append([s_id, result])
+            count_model2 += 1
+            print(result)
         elif num == 3:
             data_3.append([s_id, result])
+            count_model3 += 1
+            print(result)
         elif num == 4:
             data_4.append([s_id, result])
+            count_model4 += 1
+            print(result)
+        print()
 
-    full_result_1(data_1)
-    full_result_2(data_2)
-    full_result_3(data_3)
-    full_result_4(data_4)
+    # full_result_1(data_1)
+    # # write_to_file_append(data_1, 'model_1.out')
+    # write_to_file_append([count_model1], 'model_1.out')
+    # # print("count_model_1: ",count_model1)
+    # full_result_2(data_2)
+    # # write_to_file_append(data_2, 'model_2.out')
+    # write_to_file_append([count_model2], 'model_2.out')
+    # # print("count_model_2: ", count_model2)
+    # full_result_3(data_3)
+    # # write_to_file_append(data_3, 'model_3.out')
+    # write_to_file_append([count_model3], 'model_3.out')
+    # # print("count_model_3: ", count_model3)
+    # full_result_4(data_4)
+    # # write_to_file_append(data_4, 'model_4.out')
+    # write_to_file_append([count_model4], 'model_4.out')
+    # write_to_file_append(data_1, 'all_parse.out')
+    # write_to_file_append(data_2, 'all_parse.out')
+    # write_to_file_append(data_3, 'all_parse.out')
+    # write_to_file_append(data_4, 'all_parse.out')
+
+    # print("count_model_4: ", count_model4)
+    # print("total_sentence: ", total_sentences)
 
 
 def take_out_colon(num, item):
@@ -429,12 +470,12 @@ if __name__ == '__main__':
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     try:
-        size = 180
+        size = 160
         step = 1000
         for i in range(size):
-            # st = r"'5df14b20-9bc4-11e8-9c3b-0050562810b7'"
+            # st = r"'4eda9746-9bcd-11e8-9c3b-0050562810b7'"
             # test_sql = 'select id, law_id, item_id, sentence from traffic_law_item_split where id = '+st
-            sql = 'select id, law_id, item_id, sentence from traffic_law_item_split lit WHERE  `index`>=(select `index` from traffic_law_item_split limit '+ str(i*step) +',1) limit '+ str(step)
+            sql = 'select id, law_id, item_id, sentence from traffic_law_item_split lit WHERE  `index`>=(select `index` from traffic_law_item_split limit '+ str(128000 + i*step) +',1) limit '+ str(step)
             all_law_parse(sql)
     except (SystemExit, KeyboardInterrupt):
         raise
