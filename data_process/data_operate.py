@@ -1,13 +1,13 @@
 import sys
 import uuid
 sys.path.append(r'F:\law_git_cll')
-
+import self_log
 from function_lib.functions import *
 from regex_select import sentences_to_parts
-import logging
-import time
+from DB_pool.db_pooling import DBPool
 from function_lib.rule_table import *
 
+dbOperate = DBPool()  #数据库操作
 
 def write_to_file(res, path, flag=1):
     with open(path, 'w', encoding='UTF-8') as outfile:
@@ -51,36 +51,42 @@ def not_filter(sentences, reg):
 def build_condition(condition_id, sentence_id, condition):
     condition_sql = 'insert into lawcrf_condition values (%s,%s,%s)'
     condition_args = [condition_id, str(sentence_id), condition]
-    write_data_to_mysql(condition_sql, [condition_args])
+    dbOperate.op_modify(condition_sql, [condition_args])
+
 
 
 def build_subject(subject_id, sentence_id,  subject):
     subject_sql = 'insert into lawcrf_subject values (%s,%s,%s)'
     subject_args = [subject_id, str(sentence_id), subject]
-    write_data_to_mysql(subject_sql, [subject_args])
+    dbOperate.op_modify(subject_sql, [subject_args])
+
 
 
 def build_behavior(behavior_id, sentence_id, behavior, condition_id, subject_id, result_id, key_id=None):
     behavior_sql = 'insert into lawcrf_behavior values (%s,%s,%s,%s,%s,%s,%s)'
     behavior_args = [behavior_id, str(sentence_id), behavior, condition_id, subject_id, result_id,  key_id]
-    write_data_to_mysql(behavior_sql, [behavior_args])
+    dbOperate.op_modify(behavior_sql, [behavior_args])
+
 
 
 def build_result(result_id, sentence_id, result):
     result_sql = 'insert into lawcrf_result values (%s,%s,%s)'
     result_args = [result_id, str(sentence_id), result]
-    write_data_to_mysql(result_sql, [result_args])
+    dbOperate.op_modify(result_sql, [result_args])
+
 
 
 def build_key(key_id, sentence_id, key):
     key_sql = 'insert into lawcrf_key values (%s,%s,%s)'
     key_args = [key_id, str(sentence_id), key]
-    write_data_to_mysql(key_sql, [key_args])
+    dbOperate.op_modify(key_sql, [key_args])
+
 
 def build_item_spilt(id, law_id, item_id, sentence, law_title, chapter):
     sql = "INSERT INTO law_item_split VALUES (%s,%s,%s,%s,%s,%s,%s)"
     sql_args = [id, law_id, item_id, sentence, law_title, chapter, 0]
-    write_data_to_mysql(sql, [sql_args])
+    dbOperate.op_modify(sql, [sql_args])
+
 
 
 def full_result_1(data):
@@ -455,20 +461,7 @@ if __name__ == '__main__':
     # four_law_parse()
     # four_law_split()
     # four_law_parse_from_db()
-    import os
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)  # 设置log等级
-    rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
-    log_path = os.path.dirname(os.getcwd()) + '/Logs/'
-    log_name = log_path + rq + '.log'
-    logfile = log_name
-    fh = logging.FileHandler(logfile, mode='a', encoding='utf-8')
-    fh.setLevel(logging.ERROR)
 
-    # 定义handler的输出格式
-    formatter = logging.Formatter("%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
     try:
         size = 160
         step = 1000
@@ -480,7 +473,7 @@ if __name__ == '__main__':
     except (SystemExit, KeyboardInterrupt):
         raise
     except Exception:
-        logger.error('程序崩啦！！！', exc_info=True)
+        self_log.self_log()
 
 
 
