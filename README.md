@@ -32,7 +32,7 @@ application/json
 
 ## python 安装离线模块
 
-pip3 download -d C:\Users\JFD\Desktop\packages-whl -r requirements.txt
+pip3 download -d 路径地址\packages-whl -r requirements.txt
 
 编译源码：
 

@@ -3,7 +3,7 @@ import requests
 import json
 import pymysql
 
-conn = pymysql.connect(host="192.168.120.4", port=3306, user="root", password="root", db="flfgk", charset='utf8')
+conn = pymysql.connect()
 
 
 def ltp_tool(text, target):
@@ -13,9 +13,9 @@ def ltp_tool(text, target):
     :param target: 选择解析器(seg, ner, parse, srl)
     :return:
     """
-    url_prefix = 'http://192.168.2.32:8082/ltp'
+    url_prefix = ''
     # url_prefix = 'http://localhost:5000/ltp'
-    # url_prefix = 'http://192.168.70.110:8084/ltp'
+    # url_prefix = ''
 
     json_str = {'text': text}
     url = url_prefix + '/' + target
