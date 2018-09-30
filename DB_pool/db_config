@@ -1,10 +1,10 @@
 {
   "db":{
-    "host":"192.168.120.4",
+    "host":"localhost",
     "port":3306,
-    "user":"root",
-    "password":"root",
-    "database":"flfgk",
+    "user":"****",
+    "password":"****",
+    "database":"test",
     "charset":"utf8"
   },
   "db_pool":{
