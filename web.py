@@ -1,11 +1,11 @@
 import sys
 sys.path.append(r'F:\law_git_cll')
-
+import self_log
 from flask import Flask, request
 from flask_cors import CORS
 from regex_select import sentences_to_parts, law_to_sentence
-from data_process.data_operate import full_result_1,full_result_2,full_result_3,full_result_4,build_item_spilt,write_to_file_append
-
+from data_process.data_operate import full_result_1,full_result_2,full_result_3,full_result_4,build_item_spilt
+from DB_pool.db_pooling import DBPool
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
@@ -48,6 +48,7 @@ def splitting():
 @app.route('/store', methods=['GET', 'POST'])
 def store():
     law_items = request.get_json()
+    dbOperate = DBPool()
     if law_items is None or len(law_items) == 0:
         return ''
     try:
@@ -60,24 +61,25 @@ def store():
         ids, sentences = law_to_sentence(law_item)
 
         for id, sentence in zip(ids, sentences):
-            print(id, sentence)
-            # build_item_spilt(id, law_id, item_id, sentence, law_title, chapter)
-            parse_result , flag = sentences_to_parts(sentence)
+            # print(id, sentence)
+            build_item_spilt(id, law_id, item_id, sentence, law_title, chapter)
+            parse_result, flag = sentences_to_parts(sentence)
             if flag == 1:
-                print([id, parse_result])
-                # full_result_1([[id, parse_result]])
+                # print([id, parse_result])
+                full_result_1([[id, parse_result]])
             elif flag == 2:
-                print([id, parse_result])
-                # full_result_2([[id, parse_result]])
+                # print([id, parse_result])
+                full_result_2([[id, parse_result]])
             elif flag == 3:
-                print([id, parse_result])
-                # full_result_3([[id, parse_result]])
+                # print([id, parse_result])
+                full_result_3([[id, parse_result]])
             elif flag == 4:
-                print([id, parse_result])
-                # full_result_4([[id, parse_result]])
+                # print([id, parse_result])
+                full_result_4([[id, parse_result]])
         print('\n')
     except Exception as e:
-        print("some errors was happen:", e)
+        self_log.self_log()
+    dbOperate.dispose()
     return ''
 
 
